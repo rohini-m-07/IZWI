@@ -1,0 +1,21 @@
+{
+  "name": "IZWI Ecosystem Canvas",
+  "short_name": "IZWI",
+  "start_url": "/IZWI/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#3d2b1f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "app_icon_192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "app_icon_512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
