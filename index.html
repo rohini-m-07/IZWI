@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IZWI — Reclaiming African Voices</title>
@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="manifest" href="manifest.json">
 
 <style>
   :root {
@@ -728,15 +729,17 @@
   <p id="langSubtitle">Choose a primary tongue spoken across Africa to navigate the workspace</p>
   
   <div class="lang-grid">
+    <div class="lang-btn" onclick="selectAppLanguage('Zulu')">Zulu</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Xhosa')">Xhosa</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Sotho')">Sotho</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Tswana')">Tswana</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Venda')">Venda</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Tsonga')">Tsonga</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Swati')">Swati</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Ndebele')">Ndebele</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Pedi')">Pedi</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Afrikaans')">Afrikaans</div>
     <div class="lang-btn" onclick="selectAppLanguage('English')">English</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Zulu')">isiZulu</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Xhosa')">isiXhosa</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Sotho')">Sesotho</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Swahili')">Kiswahili</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Yoruba')">Yorùbá</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Hausa')">Hausa</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Amharic')">አማርኛ (Amharic)</div>
-    <div class="lang-btn" onclick="selectAppLanguage('Arabic')">العربية (Arabic)</div>
   </div>
 </div>
 
@@ -833,11 +836,13 @@
           <option value="Zulu">Zulu</option>
           <option value="Xhosa">Xhosa</option>
           <option value="Sotho">Sotho</option>
-          <option value="Swahili">Swahili</option>
-          <option value="Yoruba">Yoruba</option>
-          <option value="Hausa">Hausa</option>
-          <option value="Amharic">Amharic</option>
-          <option value="Arabic">Arabic</option>
+          <option value="Tswana">Tswana</option>
+          <option value="Venda">Venda</option>
+          <option value="Tsonga">Tsonga</option>
+          <option value="Swati">Swati</option>
+          <option value="Ndebele">Ndebele</option>
+          <option value="Pedi">Pedi</option>
+          <option value="Afrikaans">Afrikaans</option>
           <option value="English">English</option>
         </select>
 
