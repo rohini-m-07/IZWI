@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IZWI — Reclaiming African Voices</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="manifest" href="manifest.json">
+
+<style>
+  :root {
+    --clay: #b6532c;
+    --clay-dark: #8c3f21;
+    --earth: #3d2b1f;
+    --sand: #f2e8d8;
+    --leaf: #445c3c;
+    --ink: #2a2018;
+    --gold: #ffd700;
+    --gold-bright: #fff099;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--sand);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* Screens */
+  #videoIntro {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: #000;
+  }
+  #videoIntro video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #0d0904;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  #splash img {
+    max-width: 90%;
+    max-height: 70%;
+    object-fit: contain;
+  }
+  #splash .enter-hint {
+    margin-top: 20px;
+    color: #d8c9a3;
+    font-family: Arial, sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+
+  /* Language Selector Screen */
+  #langSelectorScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: #16100c;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--sand);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  #langSelectorScreen h2 {
+    font-size: 2rem;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+  #langSelectorScreen p {
+    font-family: Arial, sans-serif;
+    opacity: 0.8;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .lang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 700px;
+  }
+  .lang-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(216, 201, 163, 0.3);
+    color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+  .lang-btn:hover {
+    background: var(--clay);
+    border-color: var(--clay-dark);
+    transform: translateY(-2px);
+  }
+
+  /* Portal Dashboard View */
+  #dashboardPortal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+    background: radial-gradient(circle, #2a2018 0%, #0d0904 100%);
+    color: var(--sand);
+  }
+  #dashboardPortal h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  #dashboardPortal p {
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    opacity: 0.8;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+  
+  .portal-header-actions {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .grid-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .menu-box {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(216, 201, 163, 0.2);
+    padding: 30px 20px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .menu-box:hover {
+    background: var(--clay);
+    border-color: var(--clay-dark);
+    transform: translateY(-4px);
+  }
+  .menu-box h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.25rem;
+    color: #fff;
+  }
+  .menu-box p {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  /* Header Navigation */
+  header {
+    background: var(--earth);
+    color: var(--sand);
+    padding: 15px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  header h1 {
+    font-size: 1.3rem;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .nav-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--sand);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
+  .nav-btn.active { background: var(--clay); font-weight: bold; }
+  
+  .lang-change-btn {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.4);
+    color: #d8c9a3;
+  }
+  .lang-change-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+  }
+
+  /* App Views Layout */
+  .view-container {
+    display: none;
+    height: calc(100vh - 62px);
+  }
+  .view-container.active { display: flex; }
+
+  /* Memory Map Workspace Layout */
+  #layoutMap {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  #map {
+    flex: 1 1 60%;
+    min-height: 350px;
+  }
+  #panel {
+    flex: 1 1 340px;
+    max-width: 400px;
+    padding: 20px;
+    overflow-y: auto;
+    background: #fff;
+    border-left: 3px solid var(--clay);
+  }
+  #panel h2 {
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--clay-dark);
+    margin-top: 0;
+  }
+  #panel p.hint {
+    font-family: Arial, sans-serif;
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: -8px;
+  }
+
+  /* MEMORY TREE MODULE GRID LAYOUT */
+  .tree-layout-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: #120c08;
+    color: #f7ede2;
+  }
+  
+  .tree-sidebar-panel {
+    width: 320px;
+    background-color: #1a120b;
+    border-right: 1px solid #2e2216;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    gap: 20px;
+    overflow-y: auto;
+  }
+  
+  .tree-sidebar-panel h2 {
+    font-size: 1.4rem;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+  
+  .tree-sidebar-panel p {
+    font-family: Arial, sans-serif;
+    font-size: 0.85rem;
+    color: #a39587;
+    margin: 0 0 10px 0;
+    line-height: 1.4;
+  }
+
+  .branch-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .branch-card {
+    background: #251b12;
+    border: 1px solid #36291c;
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background 0.2s ease;
+  }
+  .branch-card:hover { background: #2d2117; }
+  .branch-card h3 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.3px; }
+  .branch-card p { margin: 0; font-family: Arial, sans-serif; font-size: 0.8rem; color: #ffd700; opacity: 0.85; }
+
+  .tree-main-canvas-area {
+    flex: 1;
+    background-color: #0d0905;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    position: relative;
+  }
+
+  .tree-display-container {
+    width: 100%;
+    max-width: 650px;
+    height: 100%;
+    max-height: 600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tree-leaf-element { transition: all 0.5s ease-in-out; cursor: pointer; }
+  .tree-leaf-element:hover { filter: drop-shadow(0 0 8px var(--gold)); }
+
+  /* TIMELINE VIEW CANVAS */
+  .timeline-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: #0d0905;
+    color: #fff;
+    padding: 30px;
+    overflow-y: auto;
+  }
+
+  .timeline-header-block { margin-bottom: 30px; }
+  .timeline-header-block h2 { font-size: 1.6rem; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px; }
+  .timeline-header-block p { font-family: Arial, sans-serif; font-size: 0.9rem; color: #a39587; margin: 0; }
+
+  .timeline-track-container {
+    position: relative;
+    width: 100%;
+    background-color: #16100c;
+    border: 1px solid #2a1f16;
+    border-radius: 8px;
+    padding: 60px 40px;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timeline-axis-line {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    top: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(182,83,44,0.2) 0%, rgba(255,215,0,0.6) 50%, rgba(182,83,44,0.2) 100%);
+    transform: translateY(-50%);
+    z-index: 1;
+    display: none;
+  }
+
+  .timeline-dynamic-nodes {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+  }
+
+  .timeline-empty-card {
+    background-color: #1f1610;
+    border: 1px dashed #423225;
+    border-radius: 8px;
+    padding: 30px 40px;
+    max-width: 480px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    z-index: 3;
+  }
+
+  .timeline-empty-icon {
+    font-size: 1.8rem;
+    color: #ff9f43;
+    background: rgba(255,159,67,0.1);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-bottom: 4px;
+  }
+
+  .timeline-empty-card h4 { margin: 0; font-size: 1.15rem; color: #fff; font-weight: 600; }
+  .timeline-empty-card p { margin: 0; font-family: Arial, sans-serif; font-size: 0.85rem; color: #a39587; line-height: 1.4; }
+
+  .timeline-node-point {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .timeline-node-dot {
+    width: 14px;
+    height: 14px;
+    background: var(--gold);
+    border: 3px solid #0d0905;
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--gold);
+    transition: transform 0.2s ease;
+  }
+  .timeline-node-point:hover .timeline-node-dot {
+    transform: scale(1.3);
+    background: #fff;
+  }
+
+  .timeline-node-label-year {
+    position: absolute;
+    bottom: 22px;
+    font-weight: bold;
+    color: var(--gold);
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .timeline-node-label-title {
+    position: absolute;
+    top: 22px;
+    font-family: Arial, sans-serif;
+    font-size: 0.8rem;
+    color: #f2e8d8;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
+  /* AI ANALYSIS PANEL */
+  .ai-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: #0d0905;
+    color: #fff;
+    padding: 30px;
+    overflow-y: auto;
+  }
+
+  .ai-header-block { margin-bottom: 30px; }
+  .ai-header-block h2 { font-size: 1.6rem; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px; }
+  .ai-header-block p { font-family: Arial, sans-serif; font-size: 0.9rem; color: #a39587; margin: 0; }
+  .ai-analysis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+  @media (max-width: 900px) { .ai-analysis-grid { grid-template-columns: 1fr; } }
+
+  .ai-column-card {
+    background-color: #16100c;
+    border: 1px solid #2a1f16;
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .ai-column-card h3 {
+    margin: 0; font-size: 1.15rem; color: #fff; font-weight: 600; letter-spacing: 0.3px;
+    border-bottom: 1px solid #2a1f16; padding-bottom: 12px;
+  }
+  .ai-language-item { display: flex; align-items: center; justify-content: space-between; background: #1f1610; border: 1px solid #33251a; border-radius: 6px; padding: 10px 14px; }
+  .ai-language-name { font-family: Arial, sans-serif; font-size: 0.9rem; font-weight: bold; color: #f2e8d8; }
+  .ai-language-badge { font-family: Arial, sans-serif; font-size: 0.75rem; font-weight: bold; padding: 4px 10px; border-radius: 12px; color: #fff; }
+  .ai-era-row { background: #1f1610; border: 1px solid #33251a; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .ai-era-year { font-size: 1rem; font-weight: bold; color: var(--gold); }
+  .ai-era-details { font-family: Arial, sans-serif; font-size: 0.8rem; color: #a39587; line-height: 1.3; }
+  .ai-tags-container { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ai-theme-pill { font-family: Arial, sans-serif; font-size: 0.8rem; background-color: #251b12; border: 1px solid #423225; color: #d8c9a3; padding: 6px 12px; border-radius: 20px; transition: all 0.2s ease; }
+  .ai-theme-pill:hover { border-color: var(--gold); color: #fff; }
+
+  /* MEDIA FAMILY VAULT ARCHIVE ALBUM DESIGN */
+  .archive-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: #0d0905;
+    color: #fff;
+    padding: 30px;
+    overflow-y: auto;
+  }
+  .archive-header-block { margin-bottom: 30px; }
+  .archive-header-block h2 { font-size: 1.6rem; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px; }
+  .archive-header-block p { font-family: Arial, sans-serif; font-size: 0.9rem; color: #a39587; margin: 0; }
+  .archive-workspace-grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; width: 100%; }
+  @media (max-width: 900px) { .archive-workspace-grid { grid-template-columns: 1fr; } }
+  
+  .archive-form-panel {
+    background-color: #16100c; border: 1px solid #2a1f16; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 14px; height: fit-content;
+  }
+  .archive-form-panel h3 { margin: 0 0 4px 0; font-size: 1.15rem; color: #fff; font-weight: 600; border-bottom: 1px solid #2a1f16; padding-bottom: 12px; }
+  .archive-form-panel label { display: block; font-family: Arial, sans-serif; font-size: 0.8rem; font-weight: bold; color: #a39587; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; }
+  
+  .archive-form-panel input[type=text],
+  .archive-form-panel select,
+  .archive-form-panel textarea { background-color: #1f1610; border: 1px solid #33251a; color: #fff; border-radius: 4px; padding: 10px; font-family: Arial, sans-serif; font-size: 0.9rem; width: 100%; }
+  .archive-form-panel input[type=file] { color: #a39587; font-family: Arial, sans-serif; font-size: 0.85rem; }
+  
+  .archive-display-panel { background-color: #16100c; border: 1px solid #2a1f16; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .archive-display-panel h3 { margin: 0; font-size: 1.15rem; color: #fff; font-weight: 600; border-bottom: 1px solid #2a1f16; padding-bottom: 12px; }
+  .archive-cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .archive-asset-card { background: #1f1610; border: 1px solid #33251a; border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .archive-asset-meta { display: flex; justify-content: space-between; align-items: center; }
+  .archive-asset-title { font-size: 1.05rem; font-weight: bold; color: #f2e8d8; margin: 0; }
+  .archive-asset-badge { font-family: Arial, sans-serif; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; color: #fff; }
+  .archive-asset-desc { font-family: Arial, sans-serif; font-size: 0.8rem; color: #a39587; line-height: 1.4; margin: 0; }
+  .archive-asset-link { font-family: Arial, sans-serif; font-size: 0.8rem; color: var(--gold); text-decoration: none; margin-top: 4px; display: inline-block; }
+  .archive-asset-link:hover { text-decoration: underline; }
+
+  /* FUTURE LETTER TAB & THE CINEMATIC TIME CAPSULE OVERLAY ANIMATION */
+  .letter-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: #0d0905;
+    color: #fff;
+    padding: 30px;
+    overflow-y: auto;
+  }
+  
+  /* Cinematic Overlay Platform Canvas */
+  #capsuleCinemaOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 15000;
+    background: rgba(13, 9, 5, 0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #capsuleCinemaOverlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Animated Time Capsule Container */
+  .capsule-animation-stage {
+    position: relative;
+    width: 300px;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .capsule-half {
+    position: absolute;
+    width: 120px;
+    height: 110px;
+    transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+  }
+
+  /* Sealing Start Positions */
+  .capsule-top { transform: translateY(-250px); }
+  .capsule-bottom { transform: translateY(250px); }
+
+  /* Sealing Closing / Opened Base States */
+  .capsule-animation-stage.sealing .capsule-top { transform: translateY(-48px); }
+  .capsule-animation-stage.sealing .capsule-bottom { transform: translateY(48px); }
+
+  /* Opening Sequence: Start closed in center, then split away to infinity */
+  .capsule-animation-stage.starting-closed .capsule-top { transform: translateY(-48px); }
+  .capsule-animation-stage.starting-closed .capsule-bottom { transform: translateY(48px); }
+  .capsule-animation-stage.opening .capsule-top { transform: translateY(-300px); opacity: 0; }
+  .capsule-animation-stage.opening .capsule-bottom { transform: translateY(300px); opacity: 0; }
+
+  /* Exploding / disappearing state */
+  .capsule-animation-stage.dissolved .capsule-half { opacity: 0; transform: scale(0.7) translateY(0); }
+
+  /* Big Text Message Display */
+  #capsuleSuccessMessage {
+    margin-top: 30px;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px var(--gold);
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: center;
+  }
+  #capsuleSuccessMessage.visible { opacity: 1; transform: scale(1); }
+
+  /* Particle Canvas Frame */
+  #capsuleParticleCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* Access Letter Mode Tabs Toggle buttons */
+  .mode-toggle-bar { display: flex; gap: 10px; margin-bottom: 20px; max-width: 650px; }
+  .mode-toggle-btn {
+    flex: 1; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a39587; cursor: pointer; font-family: Arial, sans-serif; font-weight: bold; border-radius: 4px; text-align: center;
+  }
+  .mode-toggle-btn.active { background: var(--earth); border-color: var(--gold); color: #fff; }
+
+  /* Decrypted Narrative Box */
+  .decrypted-letter-box {
+    background: #fdf6e2; color: #2b1f16; padding: 35px; border-radius: 8px; border-left: 6px solid var(--clay);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 1.15rem; line-height: 1.6; margin-top: 20px; max-width: 650px;
+  }
+
+  /* Form Elements standard */
+  label { display: block; font-family: Arial, sans-serif; font-size: 0.85rem; font-weight: bold; margin-top: 14px; margin-bottom: 4px; }
+  input[type=text], input[type=number], select, textarea { width: 100%; padding: 8px; font-family: Arial, sans-serif; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; }
+  textarea { resize: vertical; min-height: 60px; }
+  
+  button.submit-btn {
+    margin-top: 10px; width: 100%; padding: 12px; background: var(--clay); color: white; border: none; border-radius: 4px; font-family: Arial, sans-serif; font-weight: bold; font-size: 0.95rem; cursor: pointer;
+  }
+  button.submit-btn:hover { background: var(--clay-dark); }
+  button.submit-btn:disabled { background: #999; cursor: not-allowed; }
+
+  #status { font-family: Arial, sans-serif; font-size: 0.85rem; margin-top: 10px; min-height: 20px; }
+  #status.ok { color: var(--leaf); }
+  #status.err { color: var(--clay-dark); }
+
+  .popup-title { font-weight: bold; margin-bottom: 4px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="capsuleCinemaOverlay">
+  <canvas id="capsuleParticleCanvas"></canvas>
+  
+  <div class="capsule-animation-stage" id="capsuleStage">
+    <svg class="capsule-half capsule-top" viewBox="0 0 100 100">
+      <defs>
+        <linearGradient id="goldCapsuleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#8a6f27" />
+          <stop offset="30%" stop-color="#ffd700" />
+          <stop offset="70%" stop-color="#fff4b8" />
+          <stop offset="100%" stop-color="#b8860b" />
+        </linearGradient>
+      </defs>
+      <path d="M 10 50 A 40 40 0 0 1 90 50 L 90 95 L 10 95 Z" fill="url(#goldCapsuleGrad)" />
+      <rect x="5" y="90" width="90" height="10" rx="3" fill="#ffd700" stroke="#5c4713" stroke-width="1" />
+      <path d="M 20 65 L 30 55 L 40 65 L 50 55 L 60 65 L 70 55 L 80 65" stroke="#3d2b1f" stroke-width="2" fill="none" opacity="0.6"/>
+    </svg>
+
+    <svg class="capsule-half capsule-bottom" viewBox="0 0 100 100">
+      <path d="M 10 50 A 40 40 0 0 0 90 50 L 90 5 L 10 5 Z" fill="url(#goldCapsuleGrad)" />
+      <rect x="5" y="0" width="90" height="10" rx="3" fill="#ffd700" stroke="#5c4713" stroke-width="1" />
+      <path d="M 20 35 L 30 45 L 40 35 L 50 45 L 60 35 L 70 45 L 80 35" stroke="#3d2b1f" stroke-width="2" fill="none" opacity="0.6"/>
+    </svg>
+  </div>
+
+  <div id="capsuleSuccessMessage">Capsule Sealed</div>
+</div>
+
+<div id="videoIntro">
+  <video id="introVideo" autoplay muted playsinline>
+    <source src="Video.mp4" type="video/mp4">
+  </video>
+</div>
+
+<div id="splash" class="hidden">
+  <img src="logice.png" alt="IZWI">
+  <div class="enter-hint">Click anywhere to enter portal</div>
+</div>
+
+<div id="langSelectorScreen" class="hidden">
+  <h2 id="langTitle">Select Language / Kgetha Puo</h2>
+  <p id="langSubtitle">Choose a primary tongue spoken across Africa to navigate the workspace</p>
+  
+  <div class="lang-grid">
+    <div class="lang-btn" onclick="selectAppLanguage('Zulu')">Zulu</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Xhosa')">Xhosa</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Sotho')">Sotho</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Tswana')">Tswana</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Venda')">Venda</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Tsonga')">Tsonga</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Swati')">Swati</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Ndebele')">Ndebele</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Pedi')">Pedi</div>
+    <div class="lang-btn" onclick="selectAppLanguage('Afrikaans')">Afrikaans</div>
+    <div class="lang-btn" onclick="selectAppLanguage('English')">English</div>
+  </div>
+</div>
+
+<div id="dashboardPortal" class="hidden">
+  <div class="portal-header-actions">
+    <button class="nav-btn lang-change-btn" id="btnChangeLang" onclick="openLanguageScreen()">🌐 Change Language</button>
+  </div>
+
+  <h2 id="portalHeading">IZWI Portal</h2>
+  <p id="portalSubheading">Select a digital canvas module to explore or document oral histories.</p>
+  
+  <div class="grid-menu">
+    <div class="menu-box" onclick="switchView('memoryMap')">
+      <h3 id="mTitleMap">Memory Map</h3>
+      <p id="mDescMap">Locate, map, and view localized spatial geographic stories.</p>
+    </div>
+    <div class="menu-box" onclick="switchView('memoryTree')">
+      <h3 id="mTitleTree">Memory Tree</h3>
+      <p id="mDescTree">Explore narrative archives filtered by family roles and ancestry lineages.</p>
+    </div>
+    <div class="menu-box" onclick="switchView('interactiveTimeline')">
+      <h3 id="mTitleTimeline">Interactive Timeline</h3>
+      <p id="mDescTimeline">View recorded legacy histories down chronologically sequenced history eras.</p>
+    </div>
+    <div class="menu-box" onclick="switchView('aiAnalysis')">
+      <h3 id="mTitleAi">AI Analysis Canvas</h3>
+      <p id="mDescAi">Deconstruct linguistics, keywords, timelines, and metadata insights.</p>
+    </div>
+    <div class="menu-box" onclick="switchView('familyArchive')">
+      <h3 id="mTitleArchive">Family Archive</h3>
+      <p id="mDescArchive">Access master multimedia vaults, documents, albums, and directory tags.</p>
+    </div>
+    <div class="menu-box" onclick="switchView('futureLetter')">
+      <h3 id="mTitleLetter">Letter to the Future</h3>
+      <p id="mDescLetter">Preserve direct messages and digital legacy capsules for future generations.</p>
+    </div>
+  </div>
+</div>
+
+<div id="mainAppContent" class="hidden">
+  <header>
+    <h1 id="appHeaderTitle">IZWI Ecosystem Canvas</h1>
+    <div class="nav-tabs">
+      <button class="nav-btn" id="navMenuBtn" onclick="goToPortal()">☰ Main Menu</button>
+      <button id="tab-memoryMap" class="nav-btn" onclick="switchView('memoryMap')">Memory Map</button>
+      <button id="tab-memoryTree" class="nav-btn" onclick="switchView('memoryTree')">Memory Tree</button>
+      <button id="tab-interactiveTimeline" class="nav-btn" onclick="switchView('interactiveTimeline')">Timeline</button>
+      <button id="tab-aiAnalysis" class="nav-btn" onclick="switchView('aiAnalysis')">AI Panel</button>
+      <button id="tab-familyArchive" class="nav-btn" onclick="switchView('familyArchive')">Archive</button>
+      <button id="tab-futureLetter" class="nav-btn" onclick="switchView('futureLetter')">Future Letter</button>
+      <button class="nav-btn lang-change-btn" id="navLangBtn" onclick="openLanguageScreen()">🌐 Language</button>
+    </div>
+  </header>
+
+  <div id="view-memoryMap" class="view-container">
+    <div id="layoutMap">
+      <div id="map"></div>
+      <div id="panel">
+        <h2 id="formHeading">Add a story</h2>
+        <p class="hint" id="formHint">Click anywhere on the map first to set the location.</p>
+
+        <label id="lblLocation">Location Coordinate Context</label>
+        <div id="coordsDisplay" style="font-family: Arial, sans-serif; font-size: 0.85rem; color: #444;">No location picked yet</div>
+
+        <label id="lblTitle">Title</label>
+        <input type="text" id="title" placeholder="e.g. My grandmother's crossing">
+
+        <label id="lblDescription">Description</label>
+        <textarea id="description" placeholder="What happened here? Whose story is this?"></textarea>
+
+        <label id="lblRelation">Family Relation Lineage (Memory Tree Tag)</label>
+        <select id="relationTag">
+          <option value="Grandmother">Grandmother</option>
+          <option value="Grandfather">Grandfather</option>
+          <option value="Mother">Mother</option>
+          <option value="Father">Father</option>
+          <option value="Community">Community Member</option>
+        </select>
+
+        <label id="lblYear">Estimated Historical Year (Timeline Context)</label>
+        <input type="number" id="historicalYear" placeholder="e.g. 1976" min="1500" max="2026">
+
+        <label id="lblTheme">Theme category</label>
+        <select id="theme">
+          <option value="migration">Migration</option>
+          <option value="resistance">Resistance</option>
+          <option value="land">Land</option>
+          <option value="family">Family</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label id="lblLanguage">Primary Language Used</label>
+        <select id="language">
+          <option value="Zulu">Zulu</option>
+          <option value="Xhosa">Xhosa</option>
+          <option value="Sotho">Sotho</option>
+          <option value="Tswana">Tswana</option>
+          <option value="Venda">Venda</option>
+          <option value="Tsonga">Tsonga</option>
+          <option value="Swati">Swati</option>
+          <option value="Ndebele">Ndebele</option>
+          <option value="Pedi">Pedi</option>
+          <option value="Afrikaans">Afrikaans</option>
+          <option value="English">English</option>
+        </select>
+
+        <label id="lblAudio">Audio recording file upload</label>
+        <input type="file" id="audioFile" accept="audio/*">
+
+        <button id="submitBtn" class="submit-btn">Save story</button>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-memoryTree" class="view-container">
+    <div class="tree-layout-wrapper">
+      <div class="tree-sidebar-panel">
+        <div>
+          <h2 id="treeHeading">Memory Tree</h2>
+          <p id="treeSubheading">Categorized structural branch groupings for ancestry relationship lineages.</p>
+        </div>
+        <div class="branch-card-list">
+          <div class="branch-card">
+            <h3 id="branchGrandmother" style="color: #b6532c;">Grandmother</h3>
+            <p id="count-Grandmother">0 Memories loaded</p>
+          </div>
+          <div class="branch-card">
+            <h3 id="branchGrandfather" style="color: #d896ff;">Grandfather</h3>
+            <p id="count-Grandfather">0 Memories loaded</p>
+          </div>
+          <div class="branch-card">
+            <h3 id="branchMother" style="color: #27ae60;">Mother</h3>
+            <p id="count-Mother">0 Memories loaded</p>
+          </div>
+          <div class="branch-card">
+            <h3 id="branchFather" style="color: #2980b9;">Father</h3>
+            <p id="count-Father">0 Memories loaded</p>
+          </div>
+          <div class="branch-card">
+            <h3 id="branchCommunity" style="color: #f39c12;">Community</h3>
+            <p id="count-Community">0 Memories loaded</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tree-main-canvas-area">
+        <div class="tree-display-container">
+          <svg viewBox="0 0 500 550" width="100%" height="100%" id="goldenTreeSvg">
+            <defs>
+              <linearGradient id="goldTrunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#b8860b" />
+                <stop offset="50%" stop-color="#ffd700" />
+                <stop offset="100%" stop-color="#8a6f27" />
+              </linearGradient>
+              <linearGradient id="goldLeafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fff4b8" />
+                <stop offset="50%" stop-color="#ffd700" />
+                <stop offset="100%" stop-color="#d4af37" />
+              </linearGradient>
+              <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            <path d="M 150 510 Q 250 520 350 510 L 400 530 L 100 530 Z" fill="#1f150c"/>
+            <g stroke="url(#goldTrunkGrad)" stroke-linecap="round" fill="none" filter="url(#goldGlow)">
+              <path d="M 250 510 Q 250 440 250 380" stroke-width="14" />
+              <path d="M 245 510 Q 235 460 210 420" stroke-width="6" />
+              <path d="M 255 510 Q 265 470 290 435" stroke-width="6" />
+              <path d="M 250 380 Q 230 330 200 300" stroke-width="10" /> 
+              <path d="M 250 380 Q 270 330 300 290" stroke-width="10" /> 
+              <path d="M 250 350 Q 250 280 245 240" stroke-width="8" />  
+              <g stroke-width="4">
+                <path d="M 200 300 Q 150 290 110 270" /><path d="M 150 295 Q 120 330 80 340" />
+                <path d="M 110 270 Q 70 280 40 260" stroke-width="2.5" /><path d="M 110 270 Q 90 230 65 210" stroke-width="2.5" />
+                <path d="M 80 340 Q 50 330 30 350" stroke-width="2" />
+              </g>
+              <g stroke-width="4">
+                <path d="M 300 290 Q 350 280 400 270" /><path d="M 340 285 Q 380 320 420 335" />
+                <path d="M 400 270 Q 440 260 470 280" stroke-width="2.5" /><path d="M 400 270 Q 415 220 435 195" stroke-width="2.5" />
+                <path d="M 420 335 Q 450 360 475 350" stroke-width="2" />
+              </g>
+              <g stroke-width="4.5">
+                <path d="M 200 300 Q 180 240 140 190" /><path d="M 165 230 Q 120 210 95 160" stroke-width="3" />
+                <path d="M 75 140 Q 100 180 140 190" stroke-width="2.5" /><path d="M 125 100 Q 150 140 140 190" stroke-width="2.5" />
+                <path d="M 45 130 Q 60 170 95 160" stroke-width="2" />
+              </g>
+              <g stroke-width="4.5">
+                <path d="M 300 290 Q 310 230 355 180" /><path d="M 330 225 Q 385 200 410 150" stroke-width="3" />
+                <path d="M 355 180 Q 400 160 430 115" stroke-width="2.5" /><path d="M 355 180 Q 350 130 370 85" stroke-width="2.5" />
+                <path d="M 410 150 Q 450 140 465 100" stroke-width="2" />
+              </g>
+              <g stroke-width="4">
+                <path d="M 245 240 Q 210 170 200 110" /><path d="M 245 240 Q 275 165 295 115" />
+                <path d="M 200 110 Q 160 90 150 50" stroke-width="2.5" /><path d="M 200 110 Q 210 60 205 30" stroke-width="2.5" />
+                <path d="M 295 115 Q 330 85 345 40" stroke-width="2.5" /><path d="M 295 115 Q 280 70 265 35" stroke-width="2.5" />
+                <path d="M 225 150 Q 250 100 240 55" stroke-width="2" />
+              </g>
+            </g>
+            <g id="leafContainer"></g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-interactiveTimeline" class="view-container">
+    <div class="timeline-layout-wrapper">
+      <div class="timeline-header-block">
+        <h2 id="timeHeading">Interactive Timeline</h2>
+        <p id="timeSubheading">View recorded legacy histories down chronologically sequenced history eras.</p>
+      </div>
+
+      <div class="timeline-track-container">
+        <div class="timeline-axis-line" id="timelineAxisLine"></div>
+        <div class="timeline-dynamic-nodes" id="timelineNodesWrapper">
+          <div class="timeline-empty-card" id="timelineEmptyCard">
+            <div class="timeline-empty-icon">⚠️</div>
+            <h4 id="timelineEmptyTitle">No Chronology Sequence Plotted</h4>
+            <p id="timeSubheadingEmpty">No chronology sequence markers assigned yet. Add stories with accurate historical years to generate points.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-aiAnalysis" class="view-container">
+    <div class="ai-layout-wrapper">
+      <div class="ai-header-block">
+        <h2 id="aiHeading">AI Insight Analytics Extract</h2>
+        <p id="aiSubheading">Automated intelligence semantic keyword groupings, extracted key themes, and linguistic language patterns metadata overview.</p>
+      </div>
+
+      <div class="ai-analysis-grid">
+        <div class="ai-column-card">
+          <h3 id="aiLangTitle">Languages Extracted</h3>
+          <div id="aiLanguageListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="ai-language-item">
+              <span class="ai-language-name">isiZulu</span>
+              <span class="ai-language-badge" style="background-color: #2e7d32;">Primary</span>
+            </div>
+            <div class="ai-language-item">
+              <span class="ai-language-name">isiXhosa</span>
+              <span class="ai-language-badge" style="background-color: #ef6c00;">Secondary</span>
+            </div>
+            <div class="ai-language-item">
+              <span class="ai-language-name">English</span>
+              <span class="ai-language-badge" style="background-color: #455a64;">Linked</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-column-card">
+          <h3 id="aiEventsTitle">Historical Eras Linked</h3>
+          <div id="aiErasListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="ai-era-row">
+              <span class="ai-era-year">1913 Era Context</span>
+              <span class="ai-era-details">Native Land Act systemic shifts and ancestral property lines displacement parameters.</span>
+            </div>
+            <div class="ai-era-row">
+              <span class="ai-era-year">1976 Era Context</span>
+              <span class="ai-era-details">Soweto resistance cultural milestones and community youth resistance framework markers.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-column-card">
+          <h3 id="aiKeywordsTitle">Identified Entities & Themes</h3>
+          <div class="ai-tags-container">
+            <span class="ai-theme-pill">Land Rights</span>
+            <span class="ai-theme-pill">Displacement</span>
+            <span class="ai-theme-pill">Soweto Resistance</span>
+            <span class="ai-theme-pill">Oral Lineage</span>
+            <span class="ai-theme-pill">Family Genealogy</span>
+            <span class="ai-theme-pill">Migration Tracks</span>
+            <span class="ai-theme-pill">Cultural Heritage</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-familyArchive" class="view-container">
+    <div class="archive-layout-wrapper">
+      <div class="archive-header-block">
+        <h2 id="archiveHeading">Media Family Vault Archive Album</h2>
+        <p id="archiveSubheading">A directory ledger displaying cataloged media tracks, documents, files and assets.</p>
+      </div>
+
+      <div class="archive-workspace-grid">
+        <div class="archive-form-panel">
+          <h3 id="archiveUploadFormTitle">Upload New Asset Artifact</h3>
+          <div>
+            <label id="lblAssetTitle" for="archiveAssetTitleInput">Asset Title</label>
+            <input type="text" id="archiveAssetTitleInput" placeholder="e.g. 1976 Passbook Document Copy">
+          </div>
+          <div>
+            <label id="lblAssetType" for="archiveAssetTypeSelect">Classification Asset Type</label>
+            <select id="archiveAssetTypeSelect">
+              <option value="Document">Document Paper File</option>
+              <option value="Picture">Picture Photograph Image</option>
+              <option value="Audio">Audio Record Soundtrack</option>
+              <option value="Video">Video Camera Visual Film</option>
+            </select>
+          </div>
+          <div>
+            <label id="lblAssetDesc" for="archiveAssetDescInput">Asset Annotation Narrative</label>
+            <textarea id="archiveAssetDescInput" placeholder="Provide background record descriptions concerning this unique file asset..."></textarea>
+          </div>
+          <div>
+            <label id="lblAssetFile" for="archiveAssetFileInput">Select Media File Storage Path</label>
+            <input type="file" id="archiveAssetFileInput" accept="image/*,application/pdf,audio/*,video/*">
+          </div>
+          <button id="archiveSubmitBtn" class="submit-btn" onclick="uploadArchiveAsset()">Save Asset Record</button>
+          <div id="archiveFormStatus" style="font-family: Arial, sans-serif; font-size: 0.8rem; margin-top: 4px;"></div>
+        </div>
+
+        <div class="archive-display-panel">
+          <h3 id="archiveGalleryTitle">Archived Legacy Assets</h3>
+          <div class="archive-cards-container" id="archiveCardsGallery"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-futureLetter" class="view-container">
+    <div class="letter-layout-wrapper">
+      <div class="archive-header-block">
+        <h2 id="letterHeading">Ecosystem Canvas — Letter to the Future Artifact</h2>
+        <p id="letterSubheading">Compose an enduring legacy message or unlock a historic capsule transmission left securely for you.</p>
+      </div>
+
+      <div class="mode-toggle-bar">
+        <div class="mode-toggle-btn active" id="toggleComposeMode" onclick="setLetterMode('compose')">✍️ Seal a Capsule</div>
+        <div class="mode-toggle-btn" id="toggleAccessMode" onclick="setLetterMode('access')">🔓 Open a Capsule</div>
+      </div>
+
+      <div id="panelLetterCompose" style="background:#16100c; padding:30px; border-radius:8px; max-width:650px; border:1px solid #2a1f16; display: flex; flex-direction: column; gap: 14px;">
+         <div>
+           <label id="lblFutureTitle" style="color:#a39587; text-transform:uppercase; font-size:0.8rem;">To Upcoming Generations (Letter Title)</label>
+           <input type="text" id="futureInputTitle" style="background:#1f1610; border:1px solid #33251a; color:#fff;" placeholder="e.g. Wisdom values for the children of 2050">
+         </div>
+         <div>
+           <label id="lblRecipientEmail" style="color:#a39587; text-transform:uppercase; font-size:0.8rem;">Recipient Notification Email</label>
+           <input type="text" id="recipientEmailInput" style="background:#1f1610; border:1px solid #33251a; color:#fff;" placeholder="e.g. grandchild@lineage.com">
+         </div>
+         <div>
+           <label id="lblUnlockDate" style="color:#a39587; text-transform:uppercase; font-size:0.8rem;">Target Unlock Date & Time</label>
+           <input type="datetime-local" id="unlockDateInput" style="background:#1f1610; border:1px solid #33251a; color:#fff; width:100%; padding:8px; border-radius:4px;">
+         </div>
+         <div>
+           <label id="lblFutureContent" style="color:#a39587; text-transform:uppercase; font-size:0.8rem;">Letter Narrative Text Transcript</label>
+           <textarea id="futureInputBody" style="min-height:160px; background:#1f1610; border:1px solid #33251a; color:#fff;" placeholder="Write words of guidance, heritage context paths, and ancestral values..."></textarea>
+         </div>
+         <button class="submit-btn" id="btnSealCapsule" onclick="executeCinematicCapsuleSeal()">Seal Legacy Capsule</button>
+      </div>
+
+      <div id="panelLetterAccess" class="hidden" style="background:#16100c; padding:30px; border-radius:8px; max-width:650px; border:1px solid #2a1f16; display: flex; flex-direction: column; gap: 14px;">
+         <p id="lblAccessInstructions" style="color:#a39587; font-size:0.9rem; margin:0 0 10px 0; font-family:Arial, sans-serif;">Enter your authentication token parameters to unlock your ancestors' sealed words transmission.</p>
+         <div>
+           <label id="lblTokenKey" style="color:#a39587; text-transform:uppercase; font-size:0.8rem;">Access Security Token Key</label>
+           <input type="text" id="accessInputToken" style="background:#1f1610; border:1px solid #33251a; color:#fff;" placeholder="Enter unique capsule key...">
+         </div>
+         <button class="submit-btn" id="btnOpenCapsule" style="background:#445c3c;" onclick="executeCinematicCapsuleOpen()">Open Sealed Capsule</button>
+         
+         <div id="decryptedLetterDestination" class="hidden"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- SUPABASE CONFIGURATION ----
+  const SUPABASE_URL = "https://zttcmaueqsglohllrblc.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dGNtYXVlcXNnbG9obGxyYmxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMjk2MzUsImV4cCI6MjA5ODkwNTYzNX0.pkZU3gl3dTAH-Mp56PRp5waW1x2U0Q7Z3Vxkbosvos8";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Global variables
+  let map = null;
+  let pickedLatLng = null;
+  let tempMarker = null;
+  let allStoriesCache = [];
+  let currentLanguage = 'English';
+  let particleAnimationId = null;
+
+  // Language Dictionary Matrices
+  const translations = {
+    English: {
+      portalHeading: "IZWI Portal",
+      portalSubheading: "Select a digital canvas module to explore or document oral histories.",
+      mTitleMap: "Memory Map", mDescMap: "Locate, map, and view localized spatial geographic stories.",
+      mTitleTree: "Memory Tree", mDescTree: "Explore narrative archives filtered by family roles and ancestry lineages.",
+      mTitleTimeline: "Interactive Timeline", mDescTimeline: "View recorded legacy histories down chronologically sequenced history eras.",
+      mTitleAi: "AI Analysis Canvas", mDescAi: "Deconstruct linguistics, keywords, timelines, and metadata insights.",
+      mTitleArchive: "Family Archive", mDescArchive: "Access master multimedia vaults, documents, albums, and directory tags.",
+      mTitleLetter: "Letter to the Future", mDescLetter: "Preserve direct messages and digital legacy capsules for future generations.",
+      appHeaderTitle: "IZWI Ecosystem Canvas",
+      formHeading: "Add a story", formHint: "Click anywhere on the map first to set the location.",
+      lblLocation: "Location Coordinate Context", lblTitle: "Title", lblDescription: "Description",
+      lblRelation: "Family Relation Lineage (Memory Tree Tag)", lblYear: "Estimated Historical Year (Timeline Context)",
+      lblTheme: "Theme category", lblLanguage: "Primary Language Used", lblAudio: "Audio recording file upload",
+      submitBtn: "Save story", treeHeading: "Memory Tree", treeSubheading: "Categorized structural branch groupings for ancestry relationship lineages.",
+      timeHeading: "Interactive Timeline", timeSubheading: "View recorded legacy histories down chronologically sequenced history eras.",
+      aiHeading: "AI Insight Analytics Extract", aiSubheading: "Automated intelligence semantic keyword groupings, extracted key themes, and linguistic language patterns metadata overview.",
+      archiveHeading: "Media Family Vault Archive Album", archiveSubheading: "A directory ledger displaying cataloged media tracks, documents, files and assets.",
+      letterHeading: "Ecosystem Canvas — Letter to the Future Artifact", letterSubheading: "Compose an enduring legacy message or unlock a historic capsule transmission left securely for you.",
+      toggleComposeMode: "✍️ Seal a Capsule", toggleAccessMode: "🔓 Open a Capsule",
+      archiveUploadFormTitle: "Upload New Asset Artifact", archiveGalleryTitle: "Archived Legacy Assets"
+    },
+    Zulu: {
+      portalHeading: "I-Portal ye-IZWI",
+      portalSubheading: "Khetha imojula ye-canvas yedijithali ukuze uhlole noma ubhale umlando womlomo.",
+      mTitleMap: "Imephu Yenkumbulo", mDescMap: "Thola, wenze imephu, futhi ubuke izindaba zasendaweni zendawo.",
+      mTitleTree: "Isihlahla Senkumbulo", mDescTree: "Hlola ama-akhawunti alandisayo ahlungiwe ngezindima zomndeni nozalo.",
+      mTitleTimeline: "Umlando Ohlelekile", mDescTimeline: "Buka umlando orekhodiwe wezikhathi ezahlukene ngokulandelana kwesikhathi.",
+      mTitleAi: "Ukuhlaziywa kwe-AI", mDescAi: "Bona ukuhlaziywa kolimi, amagama ayisihluthulelo, nemininingwane ye-metadata.",
+      mTitleArchive: "Ingobo Yomndeni", mDescArchive: "Finyelela kumafayela e-multimedia, amadokhumenti, nama-albhamu omndeni.",
+      mTitleLetter: "Incwadi Eya Kusasa", mDescLetter: "Gcina imiyalezo eqondile nama-capsule wefa ledijithali ezizukulwaneni ezizayo.",
+      appHeaderTitle: "IZWI Ecosystem Canvas",
+      formHeading: "Engeza indaba", formHint: "Chofoza noma kuphi kumephu kuqala ukuze usethe indawo.",
+      lblLocation: "Izixhumanisi Zendawo", lblTitle: "Isihloko", lblDescription: "Incazelo",
+      lblRelation: "Uhlu Lozalo Lomndeni (Isihlahla Senkumbulo)", lblYear: "Unyaka Ofanele Womlando (Isikhathi)",
+      lblTheme: "Isigaba Setimu", lblLanguage: "Ulimi Oluyinhloko Olusetshenzisiwe", lblAudio: "Layisha ifayela lomsindo",
+      submitBtn: "Gcina indaba", treeHeading: "Isihlahla Senkumbulo", treeSubheading: "Amaqembu ezakhiwo zezikhonzi zobudlelwane bokukhumbula ukhokho.",
+      timeHeading: "Umlando Ohlelekile", timeSubheading: "Buka umlando orekhodiwe wezikhathi ezahlukene ngokulandelana kwesikhathi.",
+      aiHeading: "Ukuhlaziywa kwe-AI ye-Insight", aiSubheading: "Ukuhlanganiswa kwamagama abalulekile we-semantic, amatimu akhishiwe, nokubuka konke kwe-metadata kolimi.",
+      archiveHeading: "Ingobo Yomlando we-Multimedia Vault", archiveSubheading: "I-ledger ebonisa amafayela emidiya, amadokhumenti, nama-albhamu ahloliwe.",
+      letterHeading: "Incwadi Eya Kusasa — IZWI Artifact", letterSubheading: "Bhala umyalezo wefa ohlalayo noma uvule i-capsule yomlando eshiywe ngokuphepha kuwe.",
+      toggleComposeMode: "✍️ Vala i-Capsule", toggleAccessMode: "🔓 Vula i-Capsule",
+      archiveUploadFormTitle: "Layisha Ifayela Elisha", archiveGalleryTitle: "Ama-Asset Ofa Agciniwe"
+    },
+    Xhosa: {
+      portalHeading: "I-Portal ye-IZWI",
+      portalSubheading: "Khetha imojula ye-canvas yedijithali ukuhlola okanye ukubhala imbali yomlomo.",
+      mTitleMap: "Imephu Yenkumbulo", mDescMap: "Khangela, wenze imephu, kwaye ubonise amabali embali asekuhlaleni.",
+      mTitleTree: "Umthi Wenkumbulo", mDescTree: "Hlola iingobo zokugcina amabali acalulwe ngokwamaqhina osapho nozalo.",
+      mTitleTimeline: "Umgca weXesha", mDescTimeline: "Bona imbali erekhodiweyo ngokulandelelana kwamaxesha embali.",
+      mTitleAi: "Uhlalutyo lwe-AI Canvas", mDescAi: "Hlola ulwimi, amagama angundoqo, kunye neziphumo ze-metadata ngobuntlola.",
+      mTitleArchive: "Ingobo Yosapho", mDescArchive: "Ikhabhini ye-multimedia, amaxwebhu, kunye nee-albhamu zeenkumbulo.",
+      mTitleLetter: "Incwadi Eya KwiKamva", mDescLetter: "Gcina imiyalezo nemifanekiso yelifa ledijithali kwiinzala ezizayo.",
+      appHeaderTitle: "IZWI Ecosystem Canvas",
+      formHeading: "Dibanisa ibali", formHint: "Cofa naphi na kwimephu kuqala ukuseta indawo.",
+      lblLocation: "Iinkcukacha Zendawo", lblTitle: "Isihloko", lblDescription: "Inkcazo",
+      lblRelation: "Ulozo loSapho (Ithegi yomthi)", lblYear: "Unyaka Wembali (Umgca weXesha)",
+      lblTheme: "Udidi Lomxholo", lblLanguage: "Ulwimi Olungundoqo Olusetyenzisiweyo", lblAudio: "Layisha isandi esirekhodiweyo",
+      submitBtn: "Gcina ibali", treeHeading: "Umthi Wenkumbulo", treeSubheading: "Amahlaba olwazi osapho ahlulahlulwe ngokwembali yezizukulwana.",
+      timeHeading: "Umgca weXesha", timeSubheading: "Bona imbali erekhodiweyo ngokulandelelana kwamaxesha embali.",
+      aiHeading: "Uhlalutyo lwe-AI Insight", aiSubheading: "Uhlalutyo lwamagama angundoqo semantiki, imixholo ekhishwe, kunye neziphumo ze-metadata yolwimi.",
+      archiveHeading: "Ingobo ye Vault Yezinto Zosapho", archiveSubheading: "Umgca wempahla ebonisa amaxwebhu agciniweyo kunye neevidiyo.",
+      letterHeading: "Incwadi Eya KwiKamva — IZWI", letterSubheading: "Bhala umyalezo ongasoze utshabalale okanye uvule i-capsule yelifa eliyimfihlo elishiyelwe wena.",
+      toggleComposeMode: "✍️ Tywina i-Capsule", toggleAccessMode: "🔓 Vula i-Capsule",
+      archiveUploadFormTitle: "Layisha Ifayile Entsha", archiveGalleryTitle: "Izinto Zelifa Ezigciniweyo"
+    },
+    Sotho: {
+      portalHeading: "IZWI Portal",
+      portalSubheading: "Kgetha karolo ya canvas ya dijithale ho lekola kapa ho ngola nalane ea molomo.",
+      mTitleMap: "Mmapa oa Khopotso", mDescMap: "Fumana, mmapa, mme o bone lipale tsa nalane ea lehae.",
+      mTitleTree: "Sefate sa Khopotso", mDescTree: "Lekola lipale tse netefalitsoeng ka karolo ea lelapa le leloko la bona.",
+      mTitleTimeline: "Line ea Nako", mDescTimeline: "Bona nalane e rekotiloeng ho latela tatellano ea lilemo tsa nalane.",
+      mTitleAi: "AI Analysis Canvas", mDescAi: "Lekola puo, mantsoe a bohlokoa, le leseli la metadata ka bohlale ba mochini.",
+      mTitleArchive: "Polokelo ea Lelapa", mDescArchive: "Fumana difaele tsa multimedia, litokomane, le lialbamo tsa lelapa.",
+      mTitleLetter: "Lengolo le eang Kamoso", mDescLetter: "Boloka melaetsa e tobileng le li-capsule tsa nalane bakeng sa meloko e tlang.",
+      appHeaderTitle: "IZWI Ecosystem Canvas",
+      formHeading: "Eketsa pale", formHint: "Tobetsa kae kapa kae mmapeng pele ho lokisa sebaka.",
+      lblLocation: "Lintlha tsa Sebaka", lblTitle: "Sehlooho", lblDescription: "Tlhaloso",
+      lblRelation: "Leloko la Lelapa (Sefate sa Khopotso)", lblYear: "Selemo sa Nalane (Line ea Nako)",
+      lblTheme: "Mofuta oa Theme", lblLanguage: "Puo e ka Sehloohong e Sebelisitsoeng", lblAudio: "Kenya faele ea molumo",
+      submitBtn: "Boloka pale", treeHeading: "Sefate sa Khopotso", treeSubheading: "Likarolo tsa meralo ea makala bakeng sa likamano tsa meloko ea baholo.",
+      timeHeading: "Line ea Nako", timeSubheading: "Bona nalane e rekotiloeng ho latela tatellano ea lilemo tsa nalane.",
+      aiHeading: "AI Insight Analytics Extract", aiSubheading: "Tlhahlobo ea mantsoe a bohlokoa, meralo e nkiloeng, le metadata ea puo ka bohlale.",
+      archiveHeading: "Polokelo ea Multimedia Vault ea Lelapa", archiveSubheading: "Lenane le bontšang lifaele tsa litšoantšo, litokomane le livideo.",
+      letterHeading: "Lengolo le eang Kamoso — IZWI Artifact", letterSubheading: "Ngoala molaetsa oa nalane o tšoarellang kapa u bule capsule ea nalane e siiloeng ka ts'ireletso bakeng sa hau.",
+      toggleComposeMode: "✍️ Tlama Capsule", toggleAccessMode: "🔓 Bula Capsule",
+      archiveUploadFormTitle: "Kenya Letlotlo le Lecha", archiveGalleryTitle: "Matlotlo a Bolokiloeng a Nalane"
+    }
+  };
+
+  const leafCoordinatesByBranch = {
+    Grandmother: [{x: 40, y: 260, rot: -45}, {x: 70, y: 280, rot: -15}, {x: 65, y: 210, rot: -60}, {x: 30, y: 350, rot: -30}, {x: 50, y: 330, rot: -20}],
+    Grandfather: [{x: 470, y: 280, rot: 45}, {x: 435, y: 195, rot: 15}, {x: 475, y: 350, rot: 60}, {x: 420, y: 335, rot: 30}, {x: 400, y: 270, rot: 25}],
+    Mother: [{x: 75, y: 140, rot: -55}, {x: 125, y: 100, rot: -35}, {x: 45, y: 130, rot: -75}, {x: 95, y: 160, rot: -45}, {x: 140, y: 190, rot: -15}],
+    Father: [{x: 430, y: 115, rot: 55}, {x: 370, y: 85, rot: 35}, {x: 465, y: 100, rot: 75}, {x: 410, y: 150, rot: 45}, {x: 355, y: 180, rot: 15}],
+    Community: [{x: 150, y: 50, rot: -80}, {x: 205, y: 30, rot: -10}, {x: 345, y: 40, rot: 80}, {x: 265, y: 35, rot: 10}, {x: 240, y: 55, rot: 0}, {x: 200, y: 110, rot: -45}, {x: 295, y: 115, rot: 45}]
+  };
+
+  function openLanguageScreen() {
+    document.getElementById('dashboardPortal').classList.add('hidden');
+    document.getElementById('mainAppContent').classList.add('hidden');
+    document.getElementById('langSelectorScreen').classList.remove('hidden');
+  }
+
+  // CORE LANGUAGE RE-RENDER LOGIC
+  function updateInterfaceLanguage(langKey) {
+    // Use selected language if it exists, otherwise fall back to English
+    const dict = translations[langKey] ? translations[langKey] : translations['English'];
+
+    // Update all mapped elements
+    Object.keys(dict).forEach((key) => {
+      const element = document.getElementById(key);
+      if (!element) return;
+
+      if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
+        element.placeholder = dict[key];
+      } else {
+        element.textContent = dict[key];
+      }
+    });
+
+    // Keep the currently selected language visible in the form dropdown
+    const formLangDropdown = document.getElementById('language');
+    if (formLangDropdown) {
+      formLangDropdown.value = langKey;
+    }
+  }
+
+  function selectAppLanguage(langKey) {
+    currentLanguage = langKey;
+
+    // Persist selection so the UI remembers it
+    localStorage.setItem('izwiLanguage', langKey);
+
+    // Apply translations immediately
+    updateInterfaceLanguage(langKey);
+
+    // Hide selector and restore whichever screen was open before
+    document.getElementById('langSelectorScreen').classList.add('hidden');
+
+    if (!document.getElementById('mainAppContent').classList.contains('hidden')) {
+      document.getElementById('mainAppContent').classList.remove('hidden');
+    } else {
+      document.getElementById('dashboardPortal').classList.remove('hidden');
+    }
+
+    // Refresh dynamic sections without changing the layout
+    loadStories();
+    loadArchiveAssets();
+  }
+
+  function initMapIfNeeded() {
+    if (map) return; 
+    map = L.map('map').setView([-28.5, 24.7], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    map.on('click', (e) => {
+      pickedLatLng = e.latlng;
+      document.getElementById('coordsDisplay').textContent = `Lat ${e.latlng.lat.toFixed(4)}, Lng ${e.latlng.lng.toFixed(4)}`;
+      if (tempMarker) map.removeLayer(tempMarker);
+      tempMarker = L.marker(e.latlng, { opacity: 0.6 }).addTo(map);
+    });
+  }
+
+  function switchView(viewId) {
+    document.getElementById('dashboardPortal').classList.add('hidden');
+    document.getElementById('mainAppContent').classList.remove('hidden');
+    document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+    document.getElementById(`view-${viewId}`).classList.add('active');
+    const activeTabButton = document.getElementById(`tab-${viewId}`);
+    if (activeTabButton) activeTabButton.classList.add('active');
+
+    if (viewId === 'memoryMap') {
+      initMapIfNeeded();
+      setTimeout(() => { if(map) map.invalidateSize(); }, 200);
+    }
+  }
+
+  function goToPortal() {
+    document.getElementById('mainAppContent').classList.add('hidden');
+    document.getElementById('dashboardPortal').classList.remove('hidden');
+  }
+
+  function setLetterMode(mode) {
+    if (mode === 'compose') {
+      document.getElementById('toggleComposeMode').classList.add('active');
+      document.getElementById('toggleAccessMode').classList.remove('active');
+      document.getElementById('panelLetterCompose').classList.remove('hidden');
+      document.getElementById('panelLetterAccess').classList.add('hidden');
+    } else {
+      document.getElementById('toggleComposeMode').classList.remove('active');
+      document.getElementById('toggleAccessMode').classList.add('active');
+      document.getElementById('panelLetterCompose').classList.add('hidden');
+      document.getElementById('panelLetterAccess').classList.remove('hidden');
+    }
+  }
+
+  function executeCinematicCapsuleSeal() {
+    const titleVal = document.getElementById('futureInputTitle').value.trim();
+    const bodyVal = document.getElementById('futureInputBody').value.trim();
+    const recipientEmail = document.getElementById('recipientEmailInput').value.trim();
+    const unlockDateVal = document.getElementById('unlockDateInput').value;
+
+    if (!titleVal || !bodyVal) {
+      alert("Please compose a Title and Letter Narrative text transcript before sealing your capsule artifact.");
+      return;
+    }
+
+    const generatedToken = "IZWI-KEY-" + Math.floor(100000 + Math.random() * 900000);
+    const overlay = document.getElementById('capsuleCinemaOverlay');
+    const stage = document.getElementById('capsuleStage');
+    const msg = document.getElementById('capsuleSuccessMessage');
+    const canvas = document.getElementById('capsuleParticleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+
+    msg.textContent = "Capsule Sealed";
+    overlay.classList.add('active');
+    stage.className = "capsule-animation-stage";
+    msg.classList.remove('visible');
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+
+    setTimeout(() => { stage.classList.add('sealing'); }, 150);
+
+    setTimeout(() => {
+      stage.classList.add('dissolved');
+      msg.classList.add('visible');
+
+      for (let i = 0; i < 180; i++) {
+        particles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 40,
+          y: canvas.height / 2 + (Math.random() - 0.5) * 80,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6 - Math.random() * 3,
+          size: Math.random() * 3.5 + 1.5,
+          color: `hsl(${45 + Math.random() * 15}, 100%, ${60 + Math.random() * 30}%)`,
+          alpha: 1,
+          decay: Math.random() * 0.015 + 0.008
+        });
+      }
+
+      function renderParticlesLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let activeCount = 0;
+        particles.forEach(p => {
+          if (p.alpha > 0) {
+            p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+            ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            activeCount++;
+          }
+        });
+        if (activeCount > 0) { particleAnimationId = requestAnimationFrame(renderParticlesLoop); }
+      }
+      renderParticlesLoop();
+    }, 1650);
+
+    setTimeout(async () => {
+      cancelAnimationFrame(particleAnimationId);
+      overlay.classList.remove('active');
+      
+      document.getElementById('futureInputTitle').value = '';
+      document.getElementById('futureInputBody').value = '';
+      document.getElementById('recipientEmailInput').value = '';
+      document.getElementById('unlockDateInput').value = '';
+
+      await sb.from('stories').insert({
+        title: titleVal,
+        description: bodyVal,
+        access_token: generatedToken,
+        recipient_email: recipientEmail || null,
+        target_unlock_date: unlockDateVal ? new Date(unlockDateVal).toISOString() : new Date().toISOString()
+      });
+
+      const certificateText = `==================================================\n` +
+                              `          IZWI TIME CAPSULE ACCESS KEY            \n` +
+                              `==================================================\n\n` +
+                              `A legacy letter has been sealed for you.\n\n` +
+                              `Capsule Title: ${titleVal}\n` +
+                              `Target Unlock Date: ${unlockDateVal ? new Date(unlockDateVal).toLocaleString() : 'Available Immediately'}\n` +
+                              `Date Sealed: ${new Date().toLocaleDateString()}\n\n` +
+                              `--------------------------------------------------\n` +
+                              `🔑 YOUR SECURE ACCESS TOKEN KEY:\n` +
+                              `   ${generatedToken}\n` +
+                              `--------------------------------------------------\n\n` +
+                              `Keep this file safe. Paste this exact token into the\n` +
+                              `"Open a Capsule" panel within the portal workspace to\n` +
+                              `unlock and read the words addressed to you.\n`;
+
+      const blob = new Blob([certificateText], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `IZWI_Access_Key_${generatedToken}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      alert(`[CAPSULE SEALED & CERTIFICATE GENERATED]\n\nYour capsule has been securely locked and synced with Supabase.\n\nAn access key text file (${link.download}) has been generated and downloaded.`);
+    }, 4500);
+  }
+
+  async function executeCinematicCapsuleOpen() {
+    const inputToken = document.getElementById('accessInputToken').value.trim();
+    if (!inputToken) {
+      alert("Please enter a valid capsule access security key token.");
+      return;
+    }
+
+    const { data: capsule, error } = await sb
+      .from('stories')
+      .select('title, description, target_unlock_date, recipient_email, access_token')
+      .eq('access_token', inputToken)
+      .single();
+
+    if (error || !capsule) {
+      alert("Invalid Key. No sealed time capsule records match that unique security token verification code.");
+      return;
+    }
+
+    const currentTime = new Date();
+    const unlockTime = new Date(capsule.target_unlock_date);
+
+    if (currentTime < unlockTime) {
+      alert(`Access Denied. This digital capsule is safely sealed until: ${unlockTime.toLocaleString()}`);
+      return;
+    }
+
+    const overlay = document.getElementById('capsuleCinemaOverlay');
+    const stage = document.getElementById('capsuleStage');
+    const msg = document.getElementById('capsuleSuccessMessage');
+    const canvas = document.getElementById('capsuleParticleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+
+    msg.textContent = "Capsule Unlocking...";
+    overlay.classList.add('active');
+    stage.className = "capsule-animation-stage starting-closed";
+    msg.classList.add('visible');
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+
+    let particleInterval = setInterval(() => {
+      for (let i = 0; i < 5; i++) {
+        particles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 60,
+          y: canvas.height / 2 + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8,
+          size: Math.random() * 3 + 1,
+          color: '#ffd700',
+          alpha: 1,
+          decay: 0.02
+        });
+      }
+    }, 50);
+
+    function renderOpenParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        if (p.alpha > 0) {
+          p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+          ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+      particleAnimationId = requestAnimationFrame(renderOpenParticles);
+    }
+    renderOpenParticles();
+
+    setTimeout(() => {
+      msg.textContent = "Transmitting Legacy";
+      stage.className = "capsule-animation-stage opening";
+    }, 1500);
+
+    setTimeout(() => {
+      clearInterval(particleInterval);
+      cancelAnimationFrame(particleAnimationId);
+      overlay.classList.remove('active');
+
+      const targetDestination = document.getElementById('decryptedLetterDestination');
+      targetDestination.innerHTML = `
+        <div class="decrypted-letter-box">
+          <h3 style="margin:0 0 10px 0; font-family:'Georgia', serif; color:var(--clay-dark); font-size:1.4rem;">✉️ ${capsule.title}</h3>
+          <p style="margin:0; font-style:italic;">"${capsule.description}"</p>
+          <div style="margin-top:15px; font-size:0.75rem; text-transform:uppercase; font-family:Arial; color:#777; letter-spacing:0.5px;">Capsule Secure Token Match Verification: ${capsule.access_token}</div>
+        </div>
+      `;
+      targetDestination.classList.remove('hidden');
+      document.getElementById('accessInputToken').value = '';
+    }, 3800);
+  }
+
+  function renderGoldenTreeLeaves() {
+    const container = document.getElementById('leafContainer');
+    if (!container) return;
+    container.innerHTML = ''; 
+
+    const branchMapping = { 'Grandmother': 'Grandmother', 'Grandfather': 'Grandfather', 'Mother': 'Mother', 'Father': 'Father', 'Community Member': 'Community', 'Community': 'Community' };
+    const leavesDrawn = { Grandmother: 0, Grandfather: 0, Mother: 0, Father: 0, Community: 0 };
+
+    allStoriesCache.forEach((story) => {
+      const rawTag = story.relation_tag || 'Community';
+      const branchKey = branchMapping[rawTag] || 'Community';
+      const coordinatesList = leafCoordinatesByBranch[branchKey];
+      const leafIndex = leavesDrawn[branchKey];
+
+      if (coordinatesList && leafIndex < coordinatesList.length) {
+        const coord = coordinatesList[leafIndex];
+        leavesDrawn[branchKey]++;
+
+        const leafGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        leafGroup.setAttribute("transform", `translate(${coord.x}, ${coord.y}) rotate(${coord.rot})`);
+        leafGroup.setAttribute("class", "tree-leaf-element");
+
+        const leafPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        leafPath.setAttribute("d", "M 0 0 C -6 -10, -10 -18, 0 -25 C 10 -18, 6 -10, 0 0");
+        leafPath.setAttribute("fill", "url(#goldLeafGrad)");
+        leafPath.setAttribute("filter", "url(#goldGlow)");
+
+        const veinPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        veinPath.setAttribute("d", "M 0 0 L 0 -22");
+        veinPath.setAttribute("stroke", "#8a6f27");
+        veinPath.setAttribute("stroke-width", "0.75");
+
+        leafGroup.appendChild(leafPath);
+        leafGroup.appendChild(veinPath);
+        container.appendChild(leafGroup);
+      }
+    });
+  }
+
+  async function loadStories() {
+    const { data, error } = await sb.from('stories').select('*');
+    if (error) return;
+    
+    allStoriesCache = data || [];
+    const counts = { Grandmother: 0, Grandfather: 0, Mother: 0, Father: 0, Community: 0 };
+    
+    const axisLine = document.getElementById('timelineAxisLine');
+    const nodesWrapper = document.getElementById('timelineNodesWrapper');
+    const emptyCard = document.getElementById('timelineEmptyCard');
+
+    const chronologicalStories = allStoriesCache.filter(s => s.historical_year).sort((a,b) => a.historical_year - b.historical_year);
+
+    if (chronologicalStories.length > 0) {
+      if (emptyCard) emptyCard.style.display = 'none';
+      if (axisLine) axisLine.style.display = 'block';
+
+      const existingPoints = nodesWrapper.querySelectorAll('.timeline-node-point');
+      existingPoints.forEach(p => p.remove());
+
+      const minYear = chronologicalStories[0].historical_year;
+      const maxYear = chronologicalStories[chronologicalStories.length - 1].historical_year;
+      const yearRange = maxYear - minYear || 1;
+
+      chronologicalStories.forEach(story => {
+        const pctPosition = ((story.historical_year - minYear) / yearRange) * 100;
+        
+        const nodePoint = document.createElement('div');
+        nodePoint.className = 'timeline-node-point';
+        nodePoint.style.left = `${pctPosition}%`;
+
+        nodePoint.innerHTML = `
+          <div class="timeline-node-label-year">${story.historical_year}</div>
+          <div class="timeline-node-dot"></div>
+          <div class="timeline-node-label-title" title="${story.title}">${story.title}</div>
+        `;
+
+        nodePoint.addEventListener('click', () => {
+          alert(`[Era Entry]: ${story.title}\n\n${story.description || ''}`);
+        });
+
+        nodesWrapper.appendChild(nodePoint);
+      });
+    }
+
+    allStoriesCache.forEach(story => {
+      if (map) {
+        const marker = L.marker([story.latitude, story.longitude]).addTo(map);
+        marker.bindPopup(`<div class="popup-title">${story.title}</div><div>${story.description || ''}</div>`);
+      }
+      if (story.relation_tag) {
+         if (story.relation_tag === 'Community Member') counts['Community']++;
+         else if (counts[story.relation_tag] !== undefined) counts[story.relation_tag]++;
+      }
+    });
+
+    Object.keys(counts).forEach(branch => {
+       const el = document.getElementById(`count-${branch}`);
+       if (el) el.textContent = `${counts[branch]} ${counts[branch] === 1 ? 'Memory' : 'Memories'} loaded`;
+    });
+
+    renderGoldenTreeLeaves();
+  }
+
+  async function loadArchiveAssets() {
+    const galleryContainer = document.getElementById('archiveCardsGallery');
+    if (!galleryContainer) return;
+    galleryContainer.innerHTML = '';
+
+    const { data, error } = await sb.from('family_archive').select('*').order('created_at', { ascending: false });
+    if (error) return;
+
+    if (!data || data.length === 0) {
+      galleryContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #a39587; padding: 20px; border: 1px dashed #33251a; border-radius:6px;">No cataloged items inside vault. Complete form to archive media artifacts.</div>`;
+      return;
+    }
+
+    data.forEach(asset => {
+      const card = document.createElement('div');
+      card.className = 'archive-asset-card';
+
+      let typeBg = '#455a64';
+      if (asset.asset_type === 'Picture') typeBg = '#2e7d32';
+      if (asset.asset_type === 'Audio') typeBg = '#ef6c00';
+      if (asset.asset_type === 'Video') typeBg = '#c62828';
+
+      card.innerHTML = `
+        <div class="archive-asset-meta">
+          <h4 class="archive-asset-title">${asset.title}</h4>
+          <span class="archive-asset-badge" style="background-color: ${typeBg};">${asset.asset_type}</span>
+        </div>
+        <p class="archive-asset-desc">${asset.description || 'No contextual annotation provided.'}</p>
+        ${asset.file_url ? `<a href="${asset.file_url}" target="_blank" class="archive-asset-link">📂 Access Storage Asset File</a>` : ''}
+      `;
+      galleryContainer.appendChild(card);
+    });
+  }
+
+  async function uploadArchiveAsset() {
+    const titleInput = document.getElementById('archiveAssetTitleInput');
+    const typeSelect = document.getElementById('archiveAssetTypeSelect');
+    const descInput = document.getElementById('archiveAssetDescInput');
+    const fileInput = document.getElementById('archiveAssetFileInput');
+    const statusDiv = document.getElementById('archiveFormStatus');
+
+    const title = titleInput.value.trim();
+    const asset_type = typeSelect.value;
+    const description = descInput.value.trim();
+
+    if (!title) { return; }
+    statusDiv.textContent = 'Archiving asset parameters into ledger...';
+
+    let file_url = null;
+    if (fileInput.files.length > 0) {
+      file_url = `https://storage.googleapis.com/izwi-vault-mock-bucket/${Date.now()}_${fileInput.files[0].name}`;
+    }
+
+    await sb.from('family_archive').insert({ title, asset_type, description, file_url });
+    
+    titleInput.value = '';
+    descInput.value = '';
+    fileInput.value = '';
+    statusDiv.textContent = '';
+    await loadArchiveAssets();
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const relation_tag = document.getElementById('relationTag').value;
+    const historical_year = document.getElementById('historicalYear').value ? parseInt(document.getElementById('historicalYear').value) : null;
+    const theme = document.getElementById('theme').value;
+    const language = document.getElementById('language').value;
+
+    if (!pickedLatLng || !title) return;
+
+    await sb.from('stories').insert({
+      title, description, relation_tag, historical_year, theme, language,
+      latitude: pickedLatLng.lat, longitude: pickedLatLng.lng
+    });
+
+    await loadStories();
+    switchView('familyArchive');
+  });
+
+  const introVideo = document.getElementById('introVideo');
+  introVideo.addEventListener('ended', () => {
+    document.getElementById('videoIntro').classList.add('hidden');
+    document.getElementById('splash').classList.remove('hidden');
+  });
+  introVideo.addEventListener('error', () => {
+    document.getElementById('videoIntro').classList.add('hidden');
+    document.getElementById('splash').classList.remove('hidden');
+  });
+  document.getElementById('splash').addEventListener('click', function() {
+    this.classList.add('hidden');
+    document.getElementById('langSelectorScreen').classList.remove('hidden');
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadArchiveAssets();
+  });
+</script>
+</body>
+</html>
